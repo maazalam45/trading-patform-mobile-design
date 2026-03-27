@@ -11,7 +11,7 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const redirectTo = (location.state as { from?: { pathname?: string } })?.from
-    ?.pathname || "/";
+    ?.pathname || "/accounts";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +46,7 @@ export default function Login() {
           <header className="space-y-2">
             <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-none">Sign In</h1>
             <p className="text-base text-muted-foreground">
-              Access CRM using your email and password
+              Access 4xbrokers using your email and password
             </p>
           </header>
 

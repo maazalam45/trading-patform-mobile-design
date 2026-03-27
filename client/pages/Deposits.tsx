@@ -83,28 +83,6 @@ export default function Deposits() {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Total Deposited
-          </p>
-          <p className="text-3xl font-bold text-foreground">$20,500</p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Pending Deposits
-          </p>
-          <p className="text-3xl font-bold text-yellow-600">$3,000</p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Recent Deposit
-          </p>
-          <p className="text-3xl font-bold text-foreground">$5,000</p>
-        </div>
-      </div>
-
       {/* Deposits Table */}
       <div className="bg-white border border-border rounded-xl p-6 overflow-x-auto">
         <h2 className="text-xl font-bold text-foreground mb-4">Deposit Requests</h2>

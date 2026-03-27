@@ -85,28 +85,6 @@ export default function Withdrawals() {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Total Withdrawn
-          </p>
-          <p className="text-3xl font-bold text-foreground">$10,000</p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Processing
-          </p>
-          <p className="text-3xl font-bold text-blue-600">$2,500</p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Recent Withdrawal
-          </p>
-          <p className="text-3xl font-bold text-foreground">$1,500</p>
-        </div>
-      </div>
-
       {/* Withdrawals Table */}
       <div className="bg-white border border-border rounded-xl p-6 overflow-x-auto">
         <h2 className="text-xl font-bold text-foreground mb-4">Withdrawal Requests</h2>

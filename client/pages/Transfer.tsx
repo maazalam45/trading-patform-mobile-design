@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 export default function Transfer() {
+  const location = useLocation();
   const [fromAccount, setFromAccount] = useState("(default)");
   const [toAccount, setToAccount] = useState("(default)");
   const [amount, setAmount] = useState("");
@@ -12,10 +14,18 @@ export default function Transfer() {
     console.log("Transfer submitted:", { fromAccount, toAccount, amount });
   };
 
+  const titleMap: Record<string, string> = {
+    "/transfer/wallet-to-account": "Transfer Wallet to Account",
+    "/transfer/account-to-wallet": "Transfer Account to Wallet",
+    "/transfer/account-to-account": "Transfer Account to Account",
+  };
+
+  const title = titleMap[location.pathname] || "Transfer";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Transfer</h1>
+        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
         <p className="text-muted-foreground mt-1">
           Select an account to withdraw from
         </p>

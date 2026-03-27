@@ -1,558 +1,733 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Pencil, Trash2, Star, TrendingUp } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
-interface MasterTrader {
-  id: string;
-  name: string;
-  rating: number;
-  winRate: number;
-  followers: number;
-  avgReturn: number;
-  riskLevel: "Low" | "Medium" | "High";
-  experience: string;
-  selected: boolean;
-}
+type MasterTab = "request" | "choose";
 
-interface SlaveAccount {
-  id: string;
-  name: string;
-  masterTrader: string;
-  status: "Active" | "Inactive";
-  connected: string;
-}
+type MasterTraderRow = {
+  id: number;
+  userName: string;
+  flatFee: number;
+  feePercentage: string;
+  products: string;
+  qualification: string;
+};
 
-const masterTraders: MasterTrader[] = [
+const rows: MasterTraderRow[] = [
   {
-    id: "1",
-    name: "Pro Trader Alpha",
-    rating: 4.8,
-    winRate: 68,
-    followers: 1250,
-    avgReturn: 24.5,
-    riskLevel: "Medium",
-    experience: "8+ years",
-    selected: true,
+    id: 9,
+    userName: "Multipair User",
+    flatFee: 100,
+    feePercentage: "10.00%",
+    products: "EURUSD",
+    qualification: "My Temporary Qualification",
   },
   {
-    id: "2",
-    name: "Conservative Master",
-    rating: 4.6,
-    winRate: 62,
-    followers: 890,
-    avgReturn: 18.2,
-    riskLevel: "Low",
-    experience: "10+ years",
-    selected: false,
+    id: 17,
+    userName: "master user",
+    flatFee: 10,
+    feePercentage: "10.00%",
+    products: "EURUSD",
+    qualification: "Temp Qual",
   },
   {
-    id: "3",
-    name: "Aggressive Trader",
-    rating: 4.4,
-    winRate: 71,
-    followers: 2100,
-    avgReturn: 32.1,
-    riskLevel: "High",
-    experience: "6+ years",
-    selected: false,
-  },
-  {
-    id: "4",
-    name: "Balanced Strategy",
-    rating: 4.7,
-    winRate: 65,
-    followers: 1560,
-    avgReturn: 21.8,
-    riskLevel: "Medium",
-    experience: "9+ years",
-    selected: false,
-  },
-];
-
-const slaveAccounts: SlaveAccount[] = [
-  {
-    id: "1",
-    name: "DEMO1",
-    masterTrader: "Pro Trader Alpha",
-    status: "Active",
-    connected: "2026-01-15",
-  },
-  {
-    id: "2",
-    name: "LIVE1",
-    masterTrader: "Balanced Strategy",
-    status: "Active",
-    connected: "2026-02-10",
+    id: 18,
+    userName: "master userTwo",
+    flatFee: 10,
+    feePercentage: "10.00%",
+    products: "EURUSD, AUDUSD, USDJPY",
+    qualification: "New Temp Qual",
   },
 ];
 
 export default function Master() {
-  const [activeTab, setActiveTab] = useState<"request" | "slaves" | "choose">(
-    "request"
-  );
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [tab, setTab] = useState<MasterTab>("request");
   const [flatFee, setFlatFee] = useState("10");
   const [percentage, setPercentage] = useState("10.00");
   const [selectProducts, setSelectProducts] = useState("");
-  const [qualifications, setQualifications] = useState("");
+  const [qualifications, setQualifications] = useState("New Temp Qual");
   const [account, setAccount] = useState("DEM01");
-  const [selectedMaster, setSelectedMaster] = useState<string | null>(
-    masterTraders[0].id
-  );
+  const [search, setSearch] = useState("");
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"view" | "choose">("choose");
+  const [selectedTrader, setSelectedTrader] = useState<MasterTraderRow | null>(null);
+  const [effectiveMonth, setEffectiveMonth] = useState<"current" | "next">("current");
+  const [globalSelection, setGlobalSelection] = useState<"select_all" | "deselect_all">("select_all");
+  const [globalFixedLots, setGlobalFixedLots] = useState("");
+  const [globalPercentBalance, setGlobalPercentBalance] = useState("");
+  const [globalMaxLots, setGlobalMaxLots] = useState("");
+  const [masterFlat, setMasterFlat] = useState("");
+  const [masterPercent, setMasterPercent] = useState("");
+  const [feeFlat, setFeeFlat] = useState(false);
+  const [feePercentage, setFeePercentage] = useState(true);
+  const [pauseAll, setPauseAll] = useState(false);
+  const [traderFixedLots, setTraderFixedLots] = useState("");
+  const [traderPercentBalance, setTraderPercentBalance] = useState("");
+  const [traderMaxLots, setTraderMaxLots] = useState("");
+  const [traderFlat, setTraderFlat] = useState(false);
+  const [traderPercentage, setTraderPercentage] = useState(true);
+  const [traderPause, setTraderPause] = useState(false);
+  const [symbolEURUSD, setSymbolEURUSD] = useState(true);
+
+  useEffect(() => {
+    if (location.pathname.startsWith("/master/choose")) {
+      setTab("choose");
+    } else {
+      setTab("request");
+    }
+  }, [location.pathname]);
+
+  const filteredRows = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((row) =>
+      `${row.id} ${row.userName} ${row.products} ${row.qualification}`
+        .toLowerCase()
+        .includes(term)
+    );
+  }, [search]);
 
   const handleSubmitRequest = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log({ flatFee, percentage, selectProducts, qualifications, account });
+  };
+
+  const openTraderDetails = (row: MasterTraderRow, mode: "view" | "choose") => {
+    setModalMode(mode);
+    setSelectedTrader(row);
+    setMasterFlat(String(row.flatFee));
+    setMasterPercent(row.feePercentage.replace("%", ""));
+    setGlobalFixedLots("");
+    setGlobalPercentBalance("");
+    setGlobalMaxLots("");
+    setTraderFixedLots("");
+    setTraderPercentBalance("");
+    setTraderMaxLots("");
+    setEffectiveMonth("current");
+    setGlobalSelection("select_all");
+    setFeeFlat(false);
+    setFeePercentage(true);
+    setPauseAll(false);
+    setTraderFlat(false);
+    setTraderPercentage(true);
+    setTraderPause(false);
+    setSymbolEURUSD(true);
+    setDetailsOpen(true);
+  };
+
+  const handleChooseMaster = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (modalMode === "view") {
+      setDetailsOpen(false);
+      return;
+    }
     console.log({
-      flatFee,
-      percentage,
-      selectProducts,
-      qualifications,
-      account,
+      selectedTrader,
+      effectiveMonth,
+      globalSelection,
+      globalFixedLots,
+      globalPercentBalance,
+      globalMaxLots,
+      masterFlat,
+      masterPercent,
+      feeFlat,
+      feePercentage,
+      pauseAll,
+      traderFixedLots,
+      traderPercentBalance,
+      traderMaxLots,
+      traderFlat,
+      traderPercentage,
+      traderPause,
+      symbolEURUSD,
     });
-  };
-
-  const handleSelectMaster = (masterId: string) => {
-    setSelectedMaster(selectedMaster === masterId ? null : masterId);
+    setDetailsOpen(false);
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Master Trading</h1>
-        <p className="text-muted-foreground mt-1">
-          Request master status, manage slave accounts, and choose master traders
-        </p>
-      </div>
+    <>
+      <div className="space-y-6">
+        <div className="bg-white border border-border rounded-xl p-3 sm:p-4 md:p-6 overflow-hidden">
+          <div className="grid grid-cols-2 border-b border-border mb-6">
+            <button
+              onClick={() => {
+                setTab("request");
+                navigate("/master/request");
+              }}
+              className={`px-2 sm:px-4 py-3 text-xs sm:text-sm md:text-base text-center font-medium border-b-2 transition-colors ${
+                tab === "request"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Request Master Status
+            </button>
+            <button
+              onClick={() => {
+                setTab("choose");
+                navigate("/master/choose");
+              }}
+              className={`px-2 sm:px-4 py-3 text-xs sm:text-sm md:text-base text-center font-medium border-b-2 transition-colors ${
+                tab === "choose"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Choose a Master Trader
+            </button>
+          </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white border border-border rounded-xl">
-        <div className="flex border-b border-border">
-          <button
-            onClick={() => setActiveTab("request")}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
-              activeTab === "request"
-                ? "bg-primary/10 text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Request Master Status
-          </button>
-          <button
-            onClick={() => setActiveTab("slaves")}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
-              activeTab === "slaves"
-                ? "bg-primary/10 text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Show Slaves
-          </button>
-          <button
-            onClick={() => setActiveTab("choose")}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
-              activeTab === "choose"
-                ? "bg-primary/10 text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Choose Master
-          </button>
-        </div>
+          {tab === "request" ? (
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold text-foreground">Master Status Request</h2>
 
-        {/* Tab Content */}
-        <div className="p-6 md:p-8">
-          {activeTab === "request" && (
-            <RequestMasterStatus
-              flatFee={flatFee}
-              setFlatFee={setFlatFee}
-              percentage={percentage}
-              setPercentage={setPercentage}
-              selectProducts={selectProducts}
-              setSelectProducts={setSelectProducts}
-              qualifications={qualifications}
-              setQualifications={setQualifications}
-              account={account}
-              setAccount={setAccount}
-              onSubmit={handleSubmitRequest}
-            />
-          )}
+              <form onSubmit={handleSubmitRequest} className="space-y-5 max-w-2xl">
+                <Field label="Flat Fee">
+                  <input
+                    type="number"
+                    value={flatFee}
+                    onChange={(e) => setFlatFee(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-white"
+                  />
+                </Field>
 
-          {activeTab === "slaves" && (
-            <ShowSlaves slaveAccounts={slaveAccounts} />
-          )}
+                <Field label="Percentage">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={percentage}
+                    onChange={(e) => setPercentage(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-white"
+                  />
+                </Field>
 
-          {activeTab === "choose" && (
-            <ChooseMaster
-              masterTraders={masterTraders}
-              selectedMaster={selectedMaster}
-              onSelectMaster={handleSelectMaster}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+                <Field label="Select Products">
+                  <input
+                    type="text"
+                    value={selectProducts}
+                    onChange={(e) => setSelectProducts(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-white"
+                  />
+                </Field>
 
-interface RequestMasterStatusProps {
-  flatFee: string;
-  setFlatFee: (value: string) => void;
-  percentage: string;
-  setPercentage: (value: string) => void;
-  selectProducts: string;
-  setSelectProducts: (value: string) => void;
-  qualifications: string;
-  setQualifications: (value: string) => void;
-  account: string;
-  setAccount: (value: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-}
+                <Field label="Qualifications">
+                  <textarea
+                    value={qualifications}
+                    onChange={(e) => setQualifications(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-white min-h-20"
+                  />
+                </Field>
 
-function RequestMasterStatus({
-  flatFee,
-  setFlatFee,
-  percentage,
-  setPercentage,
-  selectProducts,
-  setSelectProducts,
-  qualifications,
-  setQualifications,
-  account,
-  setAccount,
-  onSubmit,
-}: RequestMasterStatusProps) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Request Master Status
-        </h2>
-        <p className="text-muted-foreground">
-          Submit your request to become a master trader
-        </p>
-      </div>
+                <Field label="Account">
+                  <select
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-white"
+                  >
+                    <option value="DEM01">DEM01</option>
+                    <option value="DEM02">DEM02</option>
+                    <option value="LIVE1">LIVE1</option>
+                  </select>
+                </Field>
 
-      <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Flat Fee
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={flatFee}
-                onChange={(e) => setFlatFee(e.target.value)}
-                placeholder="0.00"
-                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button
-                type="button"
-                className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              >
-                Actions
-              </button>
+                <button
+                  type="submit"
+                  className="rounded-md border border-border px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Submit
+                </button>
+              </form>
+
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground mb-3">Selected Products</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["EURUSD", "AUDUSD", "USDCAD", "USDJPY"].map((p) => (
+                    <span key={p} className="px-3 py-2 border border-border rounded-md bg-muted/30 text-foreground">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-md border border-border">
+                <table className="w-full min-w-[780px] text-sm">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border">
+                      <th className="px-3 py-3 text-left">Flat Fee</th>
+                      <th className="px-3 py-3 text-left">Percentage Fee</th>
+                      <th className="px-3 py-3 text-left">Qualifications</th>
+                      <th className="px-3 py-3 text-left">Account</th>
+                      <th className="px-3 py-3 text-left">Status</th>
+                      <th className="px-3 py-3 text-left">Approved On</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="px-3 py-3 border-t border-border">10</td>
+                      <td className="px-3 py-3 border-t border-border">10.00%</td>
+                      <td className="px-3 py-3 border-t border-border">New Temp Qual</td>
+                      <td className="px-3 py-3 border-t border-border">DEM01</td>
+                      <td className="px-3 py-3 border-t border-border text-green-600 font-medium">Approved</td>
+                      <td className="px-3 py-3 border-t border-border">2026-02-04 10:58:10</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <button
-              type="button"
-              className="text-xs text-accent mt-2 hover:text-accent/80"
-            >
-              Add Flat Forex Value
-            </button>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span>Show</span>
+                  <select className="border border-border rounded px-2 py-1 bg-white">
+                    <option>10</option>
+                  </select>
+                  <span>entries</span>
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Fee Percentage
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                step="0.01"
-                value={percentage}
-                onChange={(e) => setPercentage(e.target.value)}
-                placeholder="0.00"
-                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button
-                type="button"
-                className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              >
-                Actions
-              </button>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span>Search:</span>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full sm:w-56 border border-border rounded px-2 py-1 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="md:hidden rounded-md border border-border overflow-hidden">
+                <table className="w-full text-sm table-fixed">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border">
+                      <th className="px-3 py-3 text-left w-3/5">Qualification</th>
+                      <th className="px-3 py-3 text-left w-2/5">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border last:border-0">
+                        <td className="px-3 py-3 align-top">{row.qualification}</td>
+                        <td className="px-3 py-3 align-top">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className="px-3 py-1 border border-border rounded hover:bg-muted"
+                              onClick={() => openTraderDetails(row, "view")}
+                            >
+                              View
+                            </button>
+                            <button
+                              className="px-3 py-1 border border-border rounded hover:bg-muted"
+                              onClick={() => openTraderDetails(row, "choose")}
+                            >
+                              Choose
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="hidden md:block overflow-x-auto rounded-md border border-border">
+                <table className="w-full min-w-[980px] text-sm">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border">
+                      <th className="px-3 py-3 text-left">ID</th>
+                      <th className="px-3 py-3 text-left">User Name</th>
+                      <th className="px-3 py-3 text-left">Flat Fee</th>
+                      <th className="px-3 py-3 text-left">Fee Percentage</th>
+                      <th className="px-3 py-3 text-left">Products</th>
+                      <th className="px-3 py-3 text-left">Qualification</th>
+                      <th className="px-3 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border last:border-0">
+                        <td className="px-3 py-3">{row.id}</td>
+                        <td className="px-3 py-3">{row.userName}</td>
+                        <td className="px-3 py-3">{row.flatFee}</td>
+                        <td className="px-3 py-3">{row.feePercentage}</td>
+                        <td className="px-3 py-3">{row.products}</td>
+                        <td className="px-3 py-3">{row.qualification}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              className="px-3 py-1 border border-border rounded hover:bg-muted"
+                              onClick={() => openTraderDetails(row, "view")}
+                            >
+                              View
+                            </button>
+                            <button
+                              className="px-3 py-1 border border-border rounded hover:bg-muted"
+                              onClick={() => openTraderDetails(row, "choose")}
+                            >
+                              Choose
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                Showing 1 to {filteredRows.length} of {filteredRows.length} entries
+              </div>
             </div>
-            <button
-              type="button"
-              className="text-xs text-accent mt-2 hover:text-accent/80"
-            >
-              Add Plus Percentage Value
-            </button>
-          </div>
+          )}
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Select Products
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={selectProducts}
-              onChange={(e) => setSelectProducts(e.target.value)}
-              placeholder="e.g., EUR/USD, GBP/USD"
-              className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              type="button"
-              className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-            >
-              Actions
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Qualifications
-          </label>
-          <input
-            type="text"
-            value={qualifications}
-            onChange={(e) => setQualifications(e.target.value)}
-            placeholder="Describe your trading qualifications"
-            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Account
-          </label>
-          <select
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
-            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-          >
-            <option value="DEM01">DEM01</option>
-            <option value="DEM02">DEM02</option>
-            <option value="LIVE1">LIVE1</option>
-          </select>
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            className="flex-1 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            Submit Request
-          </button>
-          <button
-            type="button"
-            className="flex-1 border border-border text-foreground px-6 py-3 rounded-lg font-medium hover:bg-muted transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-interface ShowSlavesProps {
-  slaveAccounts: SlaveAccount[];
-}
-
-function ShowSlaves({ slaveAccounts }: ShowSlavesProps) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Slave Accounts
-        </h2>
-        <p className="text-muted-foreground">
-          View all accounts connected to master traders
-        </p>
       </div>
 
-      <div className="space-y-3">
-        {slaveAccounts.length === 0 ? (
-          <div className="text-center py-12 bg-muted/30 rounded-lg">
-            <p className="text-muted-foreground">
-              No slave accounts connected yet
-            </p>
-          </div>
-        ) : (
-          slaveAccounts.map((slave) => (
-            <div
-              key={slave.id}
-              className="bg-muted/30 border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-bold text-foreground text-lg">
-                    {slave.name}
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Master Trader
-                      </p>
-                      <p className="font-semibold text-foreground text-sm">
-                        {slave.masterTrader}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Status
-                      </p>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium inline-block ${
-                          slave.status === "Active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {slave.status}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Connected
-                      </p>
-                      <p className="font-semibold text-foreground text-sm">
-                        {slave.connected}
-                      </p>
-                    </div>
+      {detailsOpen ? (
+        <div className="fixed inset-0 z-50 bg-black/70" onClick={() => setDetailsOpen(false)}>
+          <div
+            className="absolute inset-0 overflow-y-auto overscroll-contain p-0 md:p-6"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <div className="min-h-full flex items-start md:items-center justify-center">
+              <form
+                className="w-full md:max-w-[1100px] min-h-[100dvh] md:min-h-0 md:max-h-[90dvh] bg-background rounded-none md:rounded-lg border border-border shadow-lg flex flex-col"
+                onSubmit={handleChooseMaster}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-3 sm:px-4 md:px-6 pt-4 pb-3 border-b border-border flex items-center justify-between">
+                  <h2 className="text-2xl md:text-3xl text-foreground font-semibold">
+                    {modalMode === "view" ? "View Master Trader" : "Choose a Master Trader"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setDetailsOpen(false)}
+                    className="p-2 rounded hover:bg-muted"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div
+                  className="flex-1 px-3 sm:px-4 md:px-6 py-4 space-y-6 overflow-y-auto overscroll-contain"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="ID">
+                  <input
+                    value={selectedTrader?.id ?? ""}
+                    readOnly
+                    className="w-full px-3 py-2 border border-border rounded bg-muted/20"
+                  />
+                </Field>
+                <Field label="Name">
+                  <input
+                    value={selectedTrader?.userName ?? ""}
+                    readOnly
+                    className="w-full px-3 py-2 border border-border rounded bg-muted/20"
+                  />
+                </Field>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="effective-month"
+                    checked={effectiveMonth === "current"}
+                    onChange={() => setEffectiveMonth("current")}
+                  />
+                  <span>For the remainder of the current month.</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="effective-month"
+                    checked={effectiveMonth === "next"}
+                    onChange={() => setEffectiveMonth("next")}
+                  />
+                  <span>For the next month.</span>
+                </label>
+              </div>
+
+              <div className="border-t border-border pt-5 space-y-4">
+                <h3 className="text-xl font-semibold text-foreground underline">
+                  Global Selection Criteria
+                </h3>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="global-selection"
+                      checked={globalSelection === "select_all"}
+                      onChange={() => setGlobalSelection("select_all")}
+                    />
+                    <span>Select All Accounts and Use Global Selections.</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="global-selection"
+                      checked={globalSelection === "deselect_all"}
+                      onChange={() => setGlobalSelection("deselect_all")}
+                    />
+                    <span>Deselect All Accounts.</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:items-end">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:col-span-2">
+                    <Field label="Fixed # of Lots">
+                      <input
+                        value={globalFixedLots}
+                        onChange={(e) => setGlobalFixedLots(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                    <Field label="% of Balance">
+                      <input
+                        value={globalPercentBalance}
+                        onChange={(e) => setGlobalPercentBalance(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                    <Field label="Max Lots">
+                      <input
+                        value={globalMaxLots}
+                        onChange={(e) => setGlobalMaxLots(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Master Flat">
+                      <input
+                        value={masterFlat}
+                        onChange={(e) => setMasterFlat(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                    <Field label="Master %">
+                      <input
+                        value={masterPercent}
+                        onChange={(e) => setMasterPercent(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={feeFlat}
+                        onChange={(e) => setFeeFlat(e.target.checked)}
+                      />
+                      <span>Flat</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={feePercentage}
+                        onChange={(e) => setFeePercentage(e.target.checked)}
+                      />
+                      <span>Percentage</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={pauseAll}
+                        onChange={(e) => setPauseAll(e.target.checked)}
+                      />
+                      <span>Pause</span>
+                    </label>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
-                  <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4 text-red-500" />
+              </div>
+
+              <div className="border-t border-border pt-5 space-y-4">
+                <h3 className="text-xl font-semibold text-foreground underline">
+                  Individual Account Selections
+                </h3>
+
+                <div className="md:hidden rounded-lg border border-border p-3 space-y-4 bg-muted/10">
+                  <div className="text-sm font-semibold text-foreground">DEMO1</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Fixed # of Lots">
+                      <input
+                        value={traderFixedLots}
+                        onChange={(e) => setTraderFixedLots(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                    <Field label="% of Balance">
+                      <input
+                        value={traderPercentBalance}
+                        onChange={(e) => setTraderPercentBalance(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                    <Field label="Max Lots">
+                      <input
+                        value={traderMaxLots}
+                        onChange={(e) => setTraderMaxLots(e.target.value)}
+                        className="w-full px-3 py-2 border border-border rounded bg-white"
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={traderFlat}
+                        onChange={(e) => setTraderFlat(e.target.checked)}
+                      />
+                      <span>Flat</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={traderPercentage}
+                        onChange={(e) => setTraderPercentage(e.target.checked)}
+                      />
+                      <span>Percentage</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={traderPause}
+                        onChange={(e) => setTraderPause(e.target.checked)}
+                      />
+                      <span>Pause</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="hidden md:block -mx-3 sm:mx-0 px-3 sm:px-0 rounded-lg border border-border max-w-full overflow-x-auto overflow-y-hidden touch-pan-x">
+                  <table className="min-w-[860px] w-max text-sm">
+                    <thead>
+                      <tr className="bg-muted/30 border-b border-border">
+                        <th className="px-3 py-3 text-left">Trader Acct Name</th>
+                        <th className="px-3 py-3 text-left">Fixed # of Lots</th>
+                        <th className="px-3 py-3 text-left">% of Balance</th>
+                        <th className="px-3 py-3 text-left">Max Lots</th>
+                        <th className="px-3 py-3 text-left">Flat</th>
+                        <th className="px-3 py-3 text-left">Percentage</th>
+                        <th className="px-3 py-3 text-left">Pause</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="px-3 py-3 border-t border-border">DEMO1</td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            value={traderFixedLots}
+                            onChange={(e) => setTraderFixedLots(e.target.value)}
+                            className="w-full px-2 py-1.5 border border-border rounded bg-white"
+                          />
+                        </td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            value={traderPercentBalance}
+                            onChange={(e) => setTraderPercentBalance(e.target.value)}
+                            className="w-full px-2 py-1.5 border border-border rounded bg-white"
+                          />
+                        </td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            value={traderMaxLots}
+                            onChange={(e) => setTraderMaxLots(e.target.value)}
+                            className="w-full px-2 py-1.5 border border-border rounded bg-white"
+                          />
+                        </td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            type="checkbox"
+                            checked={traderFlat}
+                            onChange={(e) => setTraderFlat(e.target.checked)}
+                          />
+                        </td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            type="checkbox"
+                            checked={traderPercentage}
+                            onChange={(e) => setTraderPercentage(e.target.checked)}
+                          />
+                        </td>
+                        <td className="px-3 py-3 border-t border-border">
+                          <input
+                            type="checkbox"
+                            checked={traderPause}
+                            onChange={(e) => setTraderPause(e.target.checked)}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-5 space-y-4">
+                <h3 className="text-xl font-semibold text-foreground underline">Select Symbols</h3>
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={symbolEURUSD}
+                      onChange={(e) => setSymbolEURUSD(e.target.checked)}
+                    />
+                    <span>EURUSD</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="px-3 py-2 border border-border rounded hover:bg-muted"
+                  >
+                    Adjust Time
                   </button>
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
-    </div>
+
+                <div className="sticky bottom-0 bg-background px-3 sm:px-4 md:px-6 py-4 border-t border-border mt-4 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md border border-border px-4 py-2 hover:bg-muted"
+                    onClick={() => setDetailsOpen(false)}
+                  >
+                    {modalMode === "view" ? "Close" : "Cancel"}
+                  </button>
+                  {modalMode === "choose" ? (
+                    <button
+                      type="submit"
+                      className="rounded-md border border-border px-5 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Choose
+                    </button>
+                  ) : null}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
-interface ChooseMasterProps {
-  masterTraders: MasterTrader[];
-  selectedMaster: string | null;
-  onSelectMaster: (masterId: string) => void;
-}
-
-function ChooseMaster({
-  masterTraders,
-  selectedMaster,
-  onSelectMaster,
-}: ChooseMasterProps) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          Choose Master Trader
-        </h2>
-        <p className="text-muted-foreground">
-          Browse and select from available professional master traders
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {masterTraders.map((trader) => (
-          <div
-            key={trader.id}
-            className={`border-2 rounded-xl p-6 transition-all cursor-pointer ${
-              selectedMaster === trader.id
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => onSelectMaster(trader.id)}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="font-bold text-lg text-foreground">
-                  {trader.name}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {trader.experience} experience
-                </p>
-              </div>
-              {selectedMaster === trader.id && (
-                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">✓</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Rating</span>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold text-foreground">
-                    {trader.rating}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Win Rate</span>
-                <span className="font-semibold text-foreground">
-                  {trader.winRate}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Avg Return
-                </span>
-                <span className="font-semibold text-green-600">
-                  +{trader.avgReturn}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Followers</span>
-                <span className="font-semibold text-foreground">
-                  {trader.followers.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Risk Level</span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    trader.riskLevel === "Low"
-                      ? "bg-green-100 text-green-700"
-                      : trader.riskLevel === "Medium"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {trader.riskLevel}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-4 border-t border-border">
-              <button className="flex-1 text-accent font-medium text-sm py-2 hover:bg-primary/10 rounded-lg transition-colors">
-                View Master
-              </button>
-              <button className="flex-1 border border-primary text-primary font-medium text-sm py-2 rounded-lg hover:bg-primary/10 transition-colors">
-                Edit Choice
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-foreground">{label}</label>
+      {children}
     </div>
   );
 }

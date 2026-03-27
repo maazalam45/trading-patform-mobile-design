@@ -1,322 +1,389 @@
-import { useState } from "react";
-import { Download, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
 
-interface TradeReport {
+type ReportRow = {
   id: string;
-  date: string;
+  account: string;
   symbol: string;
-  type: "Buy" | "Sell";
+  orderNo: string;
+  side: "Buy" | "Sell";
+  dateTimeEntry: string;
   entryPrice: number;
-  exitPrice: number;
-  quantity: number;
-  profit: number;
-  profitPercent: number;
-}
+  lots: number;
+  sl: number;
+  tp: number;
+  dateTimeEnd: string;
+  endPrice: number;
+  brokerComm: number;
+  swap: number;
+  masterComm: number;
+  pl: number;
+  master: number;
+  to: number;
+};
 
-const tradeReports: TradeReport[] = [
+const reportRows: ReportRow[] = [
   {
     id: "1",
-    date: "2026-03-12 14:30:00",
-    symbol: "EUR/USD",
-    type: "Buy",
-    entryPrice: 1.0850,
-    exitPrice: 1.0920,
-    quantity: 100000,
-    profit: 700,
-    profitPercent: 0.64,
+    account: "Demo1",
+    symbol: "EURUSD",
+    orderNo: "000004874",
+    side: "Buy",
+    dateTimeEntry: "2025-09-05 19:04:15",
+    entryPrice: 1.17586,
+    lots: 5.0,
+    sl: 1.17536,
+    tp: 1.17636,
+    dateTimeEnd: "2026-03-24 14:16:53",
+    endPrice: 0,
+    brokerComm: 10,
+    swap: 0,
+    masterComm: 0,
+    pl: 0,
+    master: 0,
+    to: 0,
   },
   {
     id: "2",
-    date: "2026-03-11 10:15:00",
-    symbol: "GBP/USD",
-    type: "Sell",
-    entryPrice: 1.2650,
-    exitPrice: 1.2580,
-    quantity: 50000,
-    profit: 350,
-    profitPercent: 0.55,
+    account: "Demo1",
+    symbol: "EURUSD",
+    orderNo: "000004872",
+    side: "Buy",
+    dateTimeEntry: "2025-09-04 19:09:48",
+    entryPrice: 1.16414,
+    lots: 1.0,
+    sl: 1.16413,
+    tp: 1.16415,
+    dateTimeEnd: "2026-03-24 14:16:53",
+    endPrice: 0,
+    brokerComm: 2,
+    swap: 0,
+    masterComm: 0,
+    pl: 0,
+    master: 0,
+    to: 0,
   },
   {
     id: "3",
-    date: "2026-03-10 16:45:00",
-    symbol: "USD/JPY",
-    type: "Buy",
-    entryPrice: 145.30,
-    exitPrice: 144.80,
-    quantity: 10000,
-    profit: -500,
-    profitPercent: -0.34,
+    account: "Demo1",
+    symbol: "EURUSD",
+    orderNo: "000004900",
+    side: "Buy",
+    dateTimeEntry: "2025-09-09 18:11:31",
+    entryPrice: 1.17368,
+    lots: 1,
+    sl: 1.17268,
+    tp: 1.17468,
+    dateTimeEnd: "2025-09-09 18:12:08",
+    endPrice: 1.17363,
+    brokerComm: 2,
+    swap: 0,
+    masterComm: 0,
+    pl: -7,
+    master: 0,
+    to: -7,
   },
   {
     id: "4",
-    date: "2026-03-09 09:20:00",
-    symbol: "AUD/USD",
-    type: "Buy",
-    entryPrice: 0.6750,
-    exitPrice: 0.6850,
-    quantity: 200000,
-    profit: 2000,
-    profitPercent: 1.48,
+    account: "Demo1",
+    symbol: "USDJPY",
+    orderNo: "000004907",
+    side: "Buy",
+    dateTimeEntry: "2025-09-15 14:21:03",
+    entryPrice: 147.393,
+    lots: 500,
+    sl: 147.343,
+    tp: 147.443,
+    dateTimeEnd: "2025-09-15 14:21:13",
+    endPrice: 147.389,
+    brokerComm: 10,
+    swap: 0,
+    masterComm: 0,
+    pl: -0.16,
+    master: 0,
+    to: -0.16,
   },
 ];
 
 export default function Reporting() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filterSymbol, setFilterSymbol] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const itemsPerPage = 10;
+  const [accountName, setAccountName] = useState("");
+  const [master, setMaster] = useState("");
+  const [symbol, setSymbol] = useState("USD");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [buySell, setBuySell] = useState("");
+  const [winLoss, setWinLoss] = useState("");
 
-  const filteredReports = tradeReports.filter((report) => {
-    if (filterSymbol && !report.symbol.includes(filterSymbol.toUpperCase())) {
-      return false;
-    }
-    if (filterType && report.type !== filterType) {
-      return false;
-    }
-    return true;
-  });
+  const filteredRows = useMemo(() => {
+    return reportRows.filter((row) => {
+      if (accountName && row.account !== accountName) return false;
+      if (master && String(row.master) !== master) return false;
+      if (symbol && !row.symbol.toLowerCase().includes(symbol.toLowerCase())) return false;
+      if (buySell && row.side !== buySell) return false;
+      if (winLoss === "Win" && row.pl <= 0) return false;
+      if (winLoss === "Loss" && row.pl >= 0) return false;
 
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-  const totalProfit = filteredReports.reduce((sum, report) => sum + report.profit, 0);
-  const winningTrades = filteredReports.filter((r) => r.profit > 0).length;
-  const winRate = filteredReports.length > 0 ? (winningTrades / filteredReports.length) * 100 : 0;
+      if (dateFrom) {
+        const rowStart = new Date(row.dateTimeEntry.replace(" ", "T"));
+        const from = new Date(dateFrom);
+        if (rowStart < from) return false;
+      }
+
+      if (dateTo) {
+        const rowEnd = new Date(row.dateTimeEnd.replace(" ", "T"));
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        if (rowEnd > to) return false;
+      }
+
+      return true;
+    });
+  }, [accountName, master, symbol, dateFrom, dateTo, buySell, winLoss]);
+
+  const totals = useMemo(() => {
+    return filteredRows.reduce(
+      (acc, row) => {
+        acc.brokerComm += row.brokerComm;
+        acc.swap += row.swap;
+        acc.masterComm += row.masterComm;
+        acc.pl += row.pl;
+        acc.master += row.master;
+        acc.to += row.to;
+        return acc;
+      },
+      { brokerComm: 0, swap: 0, masterComm: 0, pl: 0, master: 0, to: 0 }
+    );
+  }, [filteredRows]);
 
   const handleExportCSV = () => {
-    const headers = ["Date", "Symbol", "Type", "Entry Price", "Exit Price", "Quantity", "Profit", "Profit %"];
-    const data = filteredReports.map((report) => [
-      report.date,
-      report.symbol,
-      report.type,
-      report.entryPrice,
-      report.exitPrice,
-      report.quantity,
-      report.profit,
-      report.profitPercent.toFixed(2) + "%",
+    const headers = [
+      "Account",
+      "Symbol",
+      "Order #",
+      "Buy / Sell",
+      "DateTime Entry",
+      "Entry Price",
+      "Lots",
+      "SL",
+      "TP",
+      "DateTime End",
+      "End Price",
+      "Broker Comm",
+      "Swap",
+      "Master Comm",
+      "P/L",
+      "Master",
+      "TO",
+    ];
+
+    const data = filteredRows.map((row) => [
+      row.account,
+      row.symbol,
+      row.orderNo,
+      row.side,
+      row.dateTimeEntry,
+      row.entryPrice,
+      row.lots,
+      row.sl,
+      row.tp,
+      row.dateTimeEnd,
+      row.endPrice,
+      row.brokerComm,
+      row.swap,
+      row.masterComm,
+      row.pl,
+      row.master,
+      row.to,
     ]);
 
-    const csvContent = [
-      headers.join(","),
-      ...data.map((row) => row.join(",")),
-    ].join("\n");
-
+    const csvContent = [headers.join(","), ...data.map((row) => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "trade-reports.csv";
+    a.download = "trades-accounting-report.csv";
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Reporting & Analysis
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            View and analyze your trading performance
-          </p>
+    <div className="bg-white border border-border rounded-xl p-3 sm:p-4 md:p-6 space-y-4">
+      <h1 className="text-3xl font-bold text-foreground">Trades Accounting Report</h1>
+
+      <div className="text-2xl font-semibold text-foreground">
+        For: <span className="font-normal">Master UserTwo</span>
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/20 p-4 md:p-5">
+        <h2 className="text-xl font-semibold text-foreground mb-3">Filters:</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <FilterField label="Account Name">
+            <select
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            >
+              <option value="">All</option>
+              <option value="Demo1">Demo1</option>
+            </select>
+          </FilterField>
+
+          <FilterField label="Master">
+            <select
+              value={master}
+              onChange={(e) => setMaster(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            >
+              <option value="">All</option>
+              <option value="0">0</option>
+            </select>
+          </FilterField>
+
+          <FilterField label="Symbol">
+            <input
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            />
+          </FilterField>
+
+          <FilterField label="From">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            />
+          </FilterField>
+
+          <FilterField label="To">
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            />
+          </FilterField>
+
+          <FilterField label="Buy / Sell">
+            <select
+              value={buySell}
+              onChange={(e) => setBuySell(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            >
+              <option value="">All</option>
+              <option value="Buy">Buy</option>
+              <option value="Sell">Sell</option>
+            </select>
+          </FilterField>
+
+          <FilterField label="Won / Loss">
+            <select
+              value={winLoss}
+              onChange={(e) => setWinLoss(e.target.value)}
+              className="w-full rounded border border-border px-3 py-2 bg-white"
+            >
+              <option value="">All</option>
+              <option value="Win">Win</option>
+              <option value="Loss">Loss</option>
+            </select>
+          </FilterField>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-foreground">Report:</h2>
         <button
           onClick={handleExportCSV}
-          className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+          className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
         >
-          <Download className="w-5 h-5" />
           Export CSV
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Total Profit/Loss
-          </p>
-          <p className={`text-3xl font-bold ${totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-            ${totalProfit.toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Win Rate
-          </p>
-          <p className="text-3xl font-bold text-foreground">
-            {winRate.toFixed(1)}%
-          </p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Total Trades
-          </p>
-          <p className="text-3xl font-bold text-foreground">
-            {filteredReports.length}
-          </p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-6">
-          <p className="text-muted-foreground text-sm font-medium mb-2">
-            Winning Trades
-          </p>
-          <p className="text-3xl font-bold text-green-600">{winningTrades}</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white border border-border rounded-xl p-6">
-        <div className="flex items-center gap-4 flex-wrap">
-          <Filter className="w-5 h-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Filter by symbol (e.g., EUR/USD)"
-            value={filterSymbol}
-            onChange={(e) => {
-              setFilterSymbol(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="flex-1 min-w-48 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <select
-            value={filterType}
-            onChange={(e) => {
-              setFilterType(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-          >
-            <option value="">All Types</option>
-            <option value="Buy">Buy</option>
-            <option value="Sell">Sell</option>
-          </select>
-          <button
-            onClick={() => {
-              setFilterSymbol("");
-              setFilterType("");
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-
-      {/* Reports Table */}
-      <div className="bg-white border border-border rounded-xl p-6 overflow-x-auto">
-        <h2 className="text-xl font-bold text-foreground mb-4">Trade Reports</h2>
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="w-full min-w-[1500px] text-sm">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Date
-              </th>
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Symbol
-              </th>
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Type
-              </th>
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Entry Price
-              </th>
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Exit Price
-              </th>
-              <th className="text-left py-3 px-2 font-semibold text-foreground">
-                Quantity
-              </th>
-              <th className="text-right py-3 px-2 font-semibold text-foreground">
-                P/L
-              </th>
-              <th className="text-right py-3 px-2 font-semibold text-foreground">
-                P/L %
-              </th>
+            <tr className="bg-muted/30 border-b border-border">
+              <th className="px-3 py-3 text-left">Account</th>
+              <th className="px-3 py-3 text-left">Symbol</th>
+              <th className="px-3 py-3 text-left">Order #</th>
+              <th className="px-3 py-3 text-left">Buy / Sell</th>
+              <th className="px-3 py-3 text-left">DateTime Entry</th>
+              <th className="px-3 py-3 text-left">Entry Price</th>
+              <th className="px-3 py-3 text-left">Lots</th>
+              <th className="px-3 py-3 text-left">SL</th>
+              <th className="px-3 py-3 text-left">TP</th>
+              <th className="px-3 py-3 text-left">DateTime End</th>
+              <th className="px-3 py-3 text-left">End Price</th>
+              <th className="px-3 py-3 text-left">Broker Comm</th>
+              <th className="px-3 py-3 text-left">Swap</th>
+              <th className="px-3 py-3 text-left">Master Comm</th>
+              <th className="px-3 py-3 text-left">P/L</th>
+              <th className="px-3 py-3 text-left">Master</th>
+              <th className="px-3 py-3 text-left">TO</th>
             </tr>
           </thead>
           <tbody>
-            {filteredReports
-              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .map((report) => (
-                <tr
-                  key={report.id}
-                  className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-4 px-2 text-foreground">{report.date}</td>
-                  <td className="py-4 px-2 text-foreground font-semibold">
-                    {report.symbol}
-                  </td>
-                  <td className="py-4 px-2">
-                    <span
-                      className={`px-3 py-1 rounded text-xs font-medium ${
-                        report.type === "Buy"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {report.type}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-foreground">
-                    {report.entryPrice.toFixed(4)}
-                  </td>
-                  <td className="py-4 px-2 text-foreground">
-                    {report.exitPrice.toFixed(4)}
-                  </td>
-                  <td className="py-4 px-2 text-foreground">
-                    {report.quantity.toLocaleString()}
-                  </td>
-                  <td className={`py-4 px-2 text-right font-semibold ${report.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    ${report.profit.toLocaleString()}
-                  </td>
-                  <td className={`py-4 px-2 text-right font-semibold ${report.profitPercent >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {report.profitPercent >= 0 ? "+" : ""}
-                    {report.profitPercent.toFixed(2)}%
-                  </td>
+            {filteredRows.length === 0 ? (
+              <tr>
+                <td className="px-3 py-8 text-center text-muted-foreground" colSpan={17}>
+                  No data available in table
+                </td>
+              </tr>
+            ) : (
+              filteredRows.map((row) => (
+                <tr key={row.id} className="border-b border-border last:border-0">
+                  <td className="px-3 py-3">{row.account}</td>
+                  <td className="px-3 py-3">{row.symbol}</td>
+                  <td className="px-3 py-3">{row.orderNo}</td>
+                  <td className="px-3 py-3">{row.side}</td>
+                  <td className="px-3 py-3">{row.dateTimeEntry}</td>
+                  <td className="px-3 py-3">{row.entryPrice.toFixed(5)}</td>
+                  <td className="px-3 py-3">{row.lots.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.sl}</td>
+                  <td className="px-3 py-3">{row.tp}</td>
+                  <td className="px-3 py-3">{row.dateTimeEnd}</td>
+                  <td className="px-3 py-3">{row.endPrice.toFixed(5)}</td>
+                  <td className="px-3 py-3">{row.brokerComm.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.swap.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.masterComm.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.pl.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.master.toFixed(2)}</td>
+                  <td className="px-3 py-3">{row.to.toFixed(2)}</td>
                 </tr>
-              ))}
+              ))
+            )}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-border bg-muted/20 font-semibold">
+              <td className="px-3 py-3 text-right" colSpan={11}>
+                TOTAL:
+              </td>
+              <td className="px-3 py-3">{totals.brokerComm.toFixed(2)}</td>
+              <td className="px-3 py-3">{totals.swap.toFixed(2)}</td>
+              <td className="px-3 py-3">{totals.masterComm.toFixed(2)}</td>
+              <td className="px-3 py-3">{totals.pl.toFixed(2)}</td>
+              <td className="px-3 py-3">{totals.master.toFixed(2)}</td>
+              <td className="px-3 py-3">{totals.to.toFixed(2)}</td>
+            </tr>
+          </tfoot>
         </table>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-          <p className="text-sm text-muted-foreground">
-            Showing{" "}
-            {Math.min((currentPage - 1) * itemsPerPage + 1, filteredReports.length)} to{" "}
-            {Math.min(currentPage * itemsPerPage, filteredReports.length)} of{" "}
-            {filteredReports.length} entries
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-border rounded hover:bg-muted transition-colors disabled:opacity-50"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-2 rounded transition-colors ${
-                  currentPage === page
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border hover:bg-muted"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() =>
-                setCurrentPage(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="p-2 border border-border rounded hover:bg-muted transition-colors disabled:opacity-50"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
+  );
+}
+
+function FilterField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-foreground mb-1.5">{label}</span>
+      {children}
+    </label>
   );
 }

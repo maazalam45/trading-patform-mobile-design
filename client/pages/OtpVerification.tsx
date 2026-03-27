@@ -18,7 +18,7 @@ export default function OtpVerification() {
   const [error, setError] = useState("");
 
   const pendingEmail = state.pendingEmail || "";
-  const redirectTo = state.from || "/";
+  const redirectTo = state.from || "/accounts";
 
   useEffect(() => {
     if (!pendingEmail) {

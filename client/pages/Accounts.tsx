@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DollarSign, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -42,6 +43,7 @@ const initialForm: AccountForm = {
 };
 
 export default function Accounts() {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<AccountRow[]>(initialAccounts);
   const [query, setQuery] = useState("");
 
@@ -205,6 +207,9 @@ export default function Accounts() {
             onEdit={openEditModal}
             onDelete={handleDelete}
             onUpdateBalance={openBalanceModal}
+            onOpenTradingPlatform={(account) =>
+              navigate(`/trading-platform/${account.id}`, { state: { account } })
+            }
           />
 
           <p className="text-base">Total Live Balance: {formatMoney(totalLiveBalance)}</p>
@@ -226,6 +231,9 @@ export default function Accounts() {
             onEdit={openEditModal}
             onDelete={handleDelete}
             onUpdateBalance={openBalanceModal}
+            onOpenTradingPlatform={(account) =>
+              navigate(`/trading-platform/${account.id}`, { state: { account } })
+            }
           />
 
           <p className="text-sm text-muted-foreground">
@@ -368,11 +376,13 @@ function AccountsTable({
   onEdit,
   onDelete,
   onUpdateBalance,
+  onOpenTradingPlatform,
 }: {
   rows: AccountRow[];
   onEdit: (account: AccountRow) => void;
   onDelete: (id: string) => void;
   onUpdateBalance: (account: AccountRow) => void;
+  onOpenTradingPlatform: (account: AccountRow) => void;
 }) {
   return (
     <div className="overflow-x-auto rounded-md border border-border">
@@ -420,7 +430,7 @@ function AccountsTable({
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onUpdateBalance(row)}
+                      onClick={() => onOpenTradingPlatform(row)}
                       className="text-green-600 hover:text-green-700"
                     >
                       Trading Platform

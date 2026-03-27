@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout";
 import ProtectedRoute from "@/components/protected-route";
 import { AuthProvider } from "@/context/auth";
@@ -17,11 +17,11 @@ import ForgotPassword from "./pages/ForgotPassword";
 import OtpVerification from "./pages/OtpVerification";
 
 // Main Pages
-import Dashboard from "./pages/Dashboard";
 import Accounts from "./pages/Accounts";
 import Transfer from "./pages/Transfer";
 import Master from "./pages/Master";
 import Profile from "./pages/Profile";
+import TradingPlatform from "./pages/TradingPlatform";
 
 // Account Management
 import Deposits from "./pages/Deposits";
@@ -40,6 +40,21 @@ import DepthOfMarket from "./pages/DepthOfMarket";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function PlaceholderPage({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="bg-white border border-border rounded-xl p-6 md:p-8">
+      <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+      <p className="text-muted-foreground mt-2">{description}</p>
+    </div>
+  );
+}
 
 export const App = () => (
   <AuthProvider>
@@ -60,15 +75,27 @@ export const App = () => (
             {/* Authenticated routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<Layout />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<Navigate to="/accounts" replace />} />
                 <Route path="/accounts" element={<Accounts />} />
-                <Route path="/transfer" element={<Transfer />} />
-                <Route path="/master" element={<Master />} />
+                <Route path="/transfer" element={<Navigate to="/transfer/account-to-account" replace />} />
+                <Route path="/transfer/wallet-to-account" element={<Transfer />} />
+                <Route path="/transfer/account-to-wallet" element={<Transfer />} />
+                <Route path="/transfer/account-to-account" element={<Transfer />} />
+                <Route path="/wallets" element={<PlaceholderPage title="Display Wallets" description="Wallet list and actions will be implemented here." />} />
+                <Route path="/master" element={<Navigate to="/master/request" replace />} />
+                <Route path="/master/request" element={<Master />} />
+                <Route path="/master/choose" element={<Master />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/trading-platform/:accountId" element={<TradingPlatform />} />
 
                 {/* Account Management */}
                 <Route path="/deposits" element={<Deposits />} />
                 <Route path="/withdrawals" element={<Withdrawals />} />
+                <Route path="/support-help" element={<PlaceholderPage title="Support & Help" description="Support center and contact options will be implemented here." />} />
+                <Route path="/tutorials" element={<PlaceholderPage title="Tutorials" description="Tutorial resources will be implemented here." />} />
+                <Route path="/faq" element={<PlaceholderPage title="FAQ" description="Frequently asked questions will be implemented here." />} />
+                <Route path="/notifications-alerts" element={<PlaceholderPage title="Notification & Alerts" description="Notifications center will be implemented here." />} />
+                <Route path="/audit-trail" element={<PlaceholderPage title="Log & Audit Trail" description="Audit logs and activity trail will be implemented here." />} />
 
                 {/* Trading & Analysis */}
                 <Route path="/reporting" element={<Reporting />} />

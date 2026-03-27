@@ -11,7 +11,7 @@ type AuthContextValue = {
   logout: () => void;
 };
 
-const AUTH_STORAGE_KEY = "crm_auth_user";
+const AUTH_STORAGE_KEY = "4xbrokers_auth_user";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
